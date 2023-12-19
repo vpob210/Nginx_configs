@@ -1,0 +1,87 @@
+https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/
+
+Установите OpenSSL (если оно не установлено)
+Генерация закрытого ключа (private key):
+openssl genpkey -algorithm RSA -out private-key.pem
+
+Создание запроса на сертификат (Certificate Signing Request, CSR). Во время этого шага вам потребуется предоставить информацию о вашей организации:
+openssl req -new -key private-key.pem -out certificate.csr
+
+Генерация самоподписанного сертификата из CSR:
+openssl x509 -req -in certificate.csr -signkey private-key.pem -out self-signed-certificate.pem
+
+
+Создайте файл конфигурации для вашего серверного блока в каталоге /etc/nginx/conf.d/. Например:
+sudo nano /etc/nginx/conf.d/your-ssl-site.conf
+
+Вставьте в этот файл конфигурацию вашего серверного блока. Убедитесь, что пути к самоподписанному сертификату и закрытому ключу правильно указаны.
+server {
+    listen 443 ssl;
+    server_name test.bifon.site; # Заменить на домен или IP-адрес
+
+    ssl_certificate /etc/nginx/ssl/self-signed-certificate.pem; # Путь к самоподписанному сертификату
+    ssl_certificate_key /etc/nginx/ssl/private-key.pem; # Путь к закрытому ключу
+
+    ssl_protocols TLSv1.2 TLSv1.3; # Рекомендуется использовать современные протоколы
+    ssl_ciphers 'TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384'; # Рекомендуемые шифры
+
+    location / {
+        
+    }
+}
+
+Проверьте конфигурацию Nginx на наличие ошибок:
+sudo nginx -t
+
+Если конфигурация прошла проверку на ошибки, перезапустите Nginx:
+sudo systemctl restart nginx
+
+
+ <?php
+    echo "Привет, мир!";
+    ?>
+	
+yum install policycoreutils-python-utils
+sudo semanage port -a -t http_port_t -p tcp 5555
+setsebool -P httpd_can_network_connect 1
+
+
+iptables -A INPUT -p icmp --icmp-type echo-request -j ACCEPT   - пинг
+iptables -A INPUT -i lo -p tcp --dport 5555 -j ACCEPT
+
+iptables -A INPUT -s 10.10.1.0/24 -j ACCEPT
+
+#мини-скрипт проверки балансировки
+for i in {1..10}; do curl -I https://your_domain.com/ done
+
+
+
+server {
+    listen 80;
+    server_name test.bifon.site;
+
+    # Перенаправление HTTP на HTTPS
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name test.bifon.site; # Замените на ваш домен или IP-адрес
+
+    ssl_certificate /etc/nginx/ssl/self-signed-certificate.pem; # Путь к самоподписанному сертификату
+    ssl_certificate_key /etc/nginx/ssl/private-key.pem; # Путь к закрытому ключу
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers 'TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384'; # Рекомендуемые шифры
+    # балансировка
+    location / {
+        proxy_pass http://backend;
+    }
+}
+
+upstream backend {
+    server 10.10.1.9:5555;
+    server 10.10.1.10:5555;
+}
