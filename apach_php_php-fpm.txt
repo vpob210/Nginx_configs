@@ -1,0 +1,29 @@
+yum install httpd
+systemctl start httpd
+systemctl enable httpd
+
+yum install php php-fpm
+После установки PHP, необходимо настроить PHP-FPM для взаимодействия с Apache. Создайте файл конфигурации PHP-FPM:
+sudo nano /etc/httpd/conf.d/php-fpm.conf
+
+И добавьте в него следующее содержимое:
+<FilesMatch \.php$>
+    SetHandler "proxy:fcgi://127.0.0.1:9000"
+</FilesMatch>
+
+systemctl start php-fpm
+systemctl enable php-fpm
+
+Настроить Listen в апаче
+systemctl restart httpd
+
+vi /etc/httpd/conf.d/mywebsite.conf
+
+
+<VirtualHost *:5555>
+    ServerName your_domain.com # Замените на ваш домен
+    DocumentRoot /var/www/mywebsite
+	
+    <Directory /var/www/mywebsite>
+    </Directory>
+</VirtualHost>
